@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Mis Contraseñas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Mis Contraseñas</h1>
+            <button onclick="location.href='index.html'" class="bg-gray-500 text-white px-4 py-2 rounded">Cerrar Sesión</button>
+        </div>
+
+        <form id="passwordForm" class="mb-8 p-4 border rounded bg-gray-50">
+            <h2 class="font-semibold mb-4">Agregar Nueva Credencial</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" id="siteName" placeholder="Sitio (Ej: Netflix)" class="p-2 border rounded" required>
+                <input type="text" id="username" placeholder="Usuario/Email" class="p-2 border rounded" required>
+                <input type="password" id="password" placeholder="Contraseña" class="p-2 border rounded" required>
+            </div>
+            <button type="submit" class="mt-4 w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Guardar Credencial</button>
+        </form>
+
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b bg-gray-100">
+                    <th class="p-2">Sitio</th>
+                    <th class="p-2">Usuario</th>
+                    <th class="p-2 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="passwordList">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        const passwordForm = document.getElementById('passwordForm');
+        const passwordList = document.getElementById('passwordList');
+
+        async function loadPasswords() {
+            try {
+                const passwords = await API.getPasswords();
+                passwordList.innerHTML = ''; 
+                
+                if (Array.isArray(passwords)) {
+                    passwords.forEach(p => {
+                        passwordList.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2 font-semibold">${p.siteName}</td>
+                                <td class="p-2">${p.username}</td>
+                                <td class="p-2 text-center">
+                                    <button onclick="deletePass(${p.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("Error al cargar:", err);
+            }
+        }
+
+        passwordForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                siteName: document.getElementById('siteName').value,
+                siteUrl: "http://social.com",
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                userId: 1
+            };
+
+            try {
+                const res = await API.savePassword(data);
+                alert("✅ " + res.message);
+                passwordForm.reset();
+                loadPasswords(); 
+            } catch (err) {
+                alert("❌ " + err.message);
+            }
+        };
+
+        async function deletePass(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar esta credencial?")) return;
+            try {
+                const res = await API.deletePassword(id);
+                alert("🗑️ " + res.message);
+                loadPasswords();
+            } catch (err) {
+                alert("❌ " + err.message);
+            }
+        }
+
+        window.onload = loadPasswords;
+    </script>
+</body>
+</html>
